@@ -60,11 +60,7 @@ reload();
             </div>
           </div>
         </li>`).join('');    
-
-  likes();
-
-  editComment();
-        
+        editComment()
   }
 
   function checkValue() {
