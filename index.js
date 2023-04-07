@@ -4,70 +4,74 @@ const commentInputElement = document.querySelector('.add-form-text');
 const listElement = document.querySelector('.comments');
 buttonInputElement.disabled = true;
 let arrayOfComments=[];
+let formElement = document.querySelector('.add-form');
+let loadElement = document.querySelector('.loading');
+let containerElement =document.querySelector('.container-loading');
+
+containerElement.textContent  = 'Пожалуйста подождите, загружаю комментарии';
 
 reload();
+
+checkValue();
 
   function reload() {
 
     fetch("https://webdev-hw-api.vercel.app/api/v1/egor-zuev/comments", {
       method: "GET"
     }).then((response) => {
-          response.json().then((responseData) => {            
+          return response.json()
+    }).then((responseData) => {            
 
-            arrayOfComments = responseData.comments.map(el => {
-                  
+          arrayOfComments = responseData.comments.map(el => {
 
-                   return{
-                      name: el.author.name,
-                      time: myDate(el.date),
-                      text: el.text,
-                      'likes-counter': el.likes,
-                      'likes-class': el.isLiked == true ? '-active-like' : '',
+                return{
+                    name: el.author.name,
+                    time: myDate(el.date),
+                    text: el.text,
+                    'likes-counter': el.likes,
+                    'likes-class': el.isLiked == true ? '-active-like' : '',
+                };              
+          });    
 
-                  };
-                
-                });    
-                
-                renderComment();
-
-                likes();
-                
-            });
+          renderComment();
+    
+          formElement.classList.remove('add-form-load');
+          loadElement.classList.remove('loading-on');
+          containerElement.textContent ='';
+          
       });
-    };
+  };
 
   function renderComment() {
 
-  const listElement = document.querySelector('.comments');
-  
+      const listElement = document.querySelector('.comments');
+      
+      listElement.innerHTML = arrayOfComments.map((el,index)=> el=`
+            <li class="comment" data-index='${index}'>
+              <div class="comment-header">
+                <div class="comment-author">${el.name}</div>
+                <div class="comment-time">${el.time}</div>
+              </div>
+              <div class="comment-body">
+                <div class="comment-text">
+                  ${el.text}
+                </div>
+              </div>
+              <div class="comment-footer">
+                
+                <div class="likes">
+                  <span class="likes-counter">${el['likes-counter']}</span>
+                  <button class="like-button ${el['likes-class'] } "></button>
+                </div>
+              </div>
+            </li>`).join('');  
 
-  listElement.innerHTML = arrayOfComments.map((el,index)=> el=`
-        <li class="comment" data-index='${index}'>
-          <div class="comment-header">
-            <div class="comment-author">${el.name}</div>
-            <div class="comment-time">${el.time}</div>
-          </div>
-          <div class="comment-body">
-            <div class="comment-text">
-              ${el.text}
-            </div>
-          </div>
-          <div class="comment-footer">
-            
-            <div class="likes">
-              <span class="likes-counter">${el['likes-counter']}</span>
-              <button class="like-button ${el['likes-class']}"></button>
-            </div>
-          </div>
-        </li>`).join('');    
-        editComment()
+      likes();         
   }
 
   function checkValue() {
     if( nameInputElement.value != '' && commentInputElement.value != '') buttonInputElement.disabled = false; 
   }
-
-  checkValue();
 
   buttonInputElement.addEventListener('click',() => {
 
@@ -83,25 +87,33 @@ reload();
                                                          .replaceAll('◄', '<div class ="quote">')
                                                          .replaceAll('►', '</div><br>');
 
+                                                        
+    formElement.classList.add('add-form-load');  
+    loadElement.classList.add('loading-on');  
+    buttonInputElement.disabled = true;
 
-      fetch("https://webdev-hw-api.vercel.app/api/v1/egor-zuev/comments", {
+    fetch("https://webdev-hw-api.vercel.app/api/v1/egor-zuev/comments", {
+
       method: "POST",
-      body: JSON.stringify({ 
-                text: commentInputElement.value,
-                name: nameInputElement.value,
-                likes : 'likes-counter',
-                })
-      }).then((response) => {
-        response.json().then((responseData) => {
-          
-          reload();                                                         
-          
-        });
-     });
 
-      nameInputElement.value = '';
-      commentInputElement.value = '';
-      buttonInputElement.disabled = true;
+      body: JSON.stringify({ 
+                text:commentInputElement.value,
+                name: nameInputElement.value
+                })
+    }).then((response) => {
+
+       return response.json()
+
+    }).then((responseData) => {
+          
+       reload();   
+
+    });
+     
+
+    nameInputElement.value = '';
+    commentInputElement.value = '';
+     
   });
 
   function myDate (a) {
@@ -116,7 +128,7 @@ reload();
       return str;
   }
 
-  function likes(){
+  function likes() {
  
     const listItems = listElement.querySelectorAll('.comment');
 
@@ -127,26 +139,30 @@ reload();
          
           likeButton.addEventListener('click',(event) => {
            
-          event.stopPropagation();  
-          likeButton.classList.toggle('-active-like');
-          likeButton.classList.contains('-active-like') ? likeCounter.innerHTML++ : likeCounter.innerHTML--;
+              event.stopPropagation();  
+
+              likeButton.classList.add('-loading-like');
+              
+              delay(2000).then(() => {
+
+                  likeButton.classList.toggle('-active-like');
+                  likeButton.classList.contains('-active-like') ? likeCounter.innerHTML++ : likeCounter.innerHTML--;
+                  likeButton.classList.remove('-loading-like');
+
+              })                   
 
           })
       }
+
   }
 
-      function editComment(){
+    function delay(interval = 300) {
 
-        const listItems = listElement.querySelectorAll('.comment');
+        return new Promise((resolve) => {
 
-        for(let key of listItems) { 
+          setTimeout(() => {
+            resolve();
+          }, interval);
 
-          key.addEventListener('click',() => {
-
-            let author = key.querySelector('.comment-author');
-            let text = key.querySelector('.comment-text');
-            commentInputElement.value = `◄ ${author.textContent} ${text.textContent} ►`;
-
-          }); 
-        }
-      }
+        });
+    }
