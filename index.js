@@ -12,6 +12,7 @@ containerElement.textContent  = 'Пожалуйста подождите, заг
 
 reload();
 
+
 checkValue();
 
   function reload() {
