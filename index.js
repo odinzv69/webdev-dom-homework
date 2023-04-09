@@ -29,8 +29,8 @@ checkValue();
                     name: el.author.name,
                     time: myDate(el.date),
                     text: el.text,
-                    'likes-counter': el.likes,
-                    'likes-class': el.isLiked == true ? '-active-like' : '',
+                    likes1: el.likes,
+                    likes2: el.isLiked == true ? '-active-like' : '',
                 };              
           });    
 
@@ -61,8 +61,8 @@ checkValue();
               <div class="comment-footer">
                 
                 <div class="likes">
-                  <span class="likes-counter">${el['likes-counter']}</span>
-                  <button class="like-button ${el['likes-class'] } "></button>
+                  <span class="likes-counter">${el.likes1}</span>
+                  <button class="like-button ${el.likes2} "></button>
                 </div>
               </div>
             </li>`).join('');  
@@ -99,7 +99,8 @@ checkValue();
 
       body: JSON.stringify({ 
                 text:commentInputElement.value,
-                name: nameInputElement.value
+                name: nameInputElement.value,
+                likes1: el.likes,
                 })
     }).then((response) => {
 
