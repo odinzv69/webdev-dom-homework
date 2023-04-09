@@ -1,113 +1,169 @@
-// + Работает целевой сценарий, у каждого комментария в списке работает кнопка лайка.
-// + Данные о комментариях хранятся в массиве JS-кода.
-// + В коде реализована рендер-функция, которая рендерит список комментариев.
+const buttonInputElement = document.querySelector('.add-form-button');
+const nameInputElement = document.querySelector('.add-form-name');
+const commentInputElement = document.querySelector('.add-form-text');
+const listElement = document.querySelector('.comments');
+buttonInputElement.disabled = true;
+let arrayOfComments=[];
+let formElement = document.querySelector('.add-form');
+let loadElement = document.querySelector('.loading');
+let containerElement =document.querySelector('.container-loading');
 
-const buttonElement = document.getElementById("add-button");
-const listElement = document.getElementById("list");
-const nameInputElement = document.getElementById("name-input");
-const commentInputElement = document.getElementById("comment-input");
+containerElement.textContent  = 'Пожалуйста подождите, загружаю комментарии';
 
-const initEventListeners = () => {
-  const commentElements = document.querySelectorAll('.comment');
+reload();
 
-  for(const commentElement of commentElements) {
-    commentElement.addEventListener("click", () => {
-      likes();
-    })
-  }
 
-}
+checkValue();
 
-function myDate() {
-  let date = new Date();
-  let monthArray = ['01','02','03','04','05','06','07','08','09','10','11','12'];
-  let myMin = String(date.getMinutes()).lenght < 2 ? '0' + date.getMinutes() : date.getMinutes();
-  let myHours = String(date.getHours()).lenght < 2 ? '0' + date.getHours() : date.getHours();
-  let myDay = String(date.getDate()).lenght < 2 ? '0' + date.getDate() : date.getDate();
-  let myMonth = monthArray[+date.getMonth()];
-  let myYear = String(date.getFullYear()).slice(2);
-  let str = myDay + '.' + myMonth + '.' + myYear + ' ' + myHours + ':' + myMin;
-  return str
-}
+  function reload() {
 
-const comment = [
-  {
-    name: "Глеб Фокин",
-    time: "12.02.22 12:18",
-    comments: "Это будет первый комментарий на этой странице",
-    like: "0",
-  },
-  {
-    name: "Варвара Н.",
-    time: "13.02.22 19:22",
-    comments: "Мне нравится как оформлена эта страница! ❤",
-    like: "0",
-  },
-]
+    fetch("https://webdev-hw-api.vercel.app/api/v1/egor-zuev/comments", {
+      method: "GET"
+    }).then((response) => {
+          return response.json()
+    }).then((responseData) => {            
 
-function likes() {
-  const listItems = listElement.querySelectorAll('.comment');
-    for (let key of listItems) {
-      const likeButton = key.querySelector('.like-button');
-      const likeCounter = key.querySelector('.like-counter');
+          arrayOfComments = responseData.comments.map(el => {
 
-      likeButton.addEventListener("click",() => {
-        likeButton.classList.toggle('-active-like');
-        likeButton.classList.contains('-active-like');
-      })
-    }
-}
+                return{
+                    name: el.author.name,
+                    time: myDate(el.date),
+                    text: el.text,
+                    'likes-counter': el.likes,
+                    'likes-class': el.isLiked == true ? '-active-like' : '',
+                };              
+          });    
 
-const renderComment = () => {
-  const commentHtml = comment.map((comment) => {
-    return `<li class="comment" data-like = '0'>
-    <div class="comment-header">
-      <div>${comment.name}</div>
-      <div>${comment.time}</div>
-    </div>
-    <div class="comment-body">
-      <div class="comment-text">
-        ${comment.comments}
-      </div>
-    </div>
-    <div class="comment-footer">
-      <div class="likes">
-        <span class="likes-counter">0</span>
-        <button class="like-button"></button>
-      </div>
-    </div>
-  </li>`
-  }) .join("");
-  console.log(commentHtml)
-
-  listElement.innerHTML = commentHtml;
-
-  initEventListeners();
-}
-
-renderComment();
-
-buttonElement.addEventListener('click', () => {
-nameInputElement.classList.remove("error");
-commentInputElement.classList.remove("error");
-  if (nameInputElement.value === "") {
-    nameInputElement.classList.add("error");
-    return;
+          renderComment();
+    
+          formElement.classList.remove('add-form-load');
+          loadElement.classList.remove('loading-on');
+          containerElement.textContent ='';
+          
+      });
   };
-  if (commentInputElement.value === "") {
-    commentInputElement.classList.add("error");
-    return;
+
+  function renderComment() {
+
+      const listElement = document.querySelector('.comments');
+      
+      listElement.innerHTML = arrayOfComments.map((el,index)=> el=`
+            <li class="comment" data-index='${index}'>
+              <div class="comment-header">
+                <div class="comment-author">${el.name}</div>
+                <div class="comment-time">${el.time}</div>
+              </div>
+              <div class="comment-body">
+                <div class="comment-text">
+                  ${el.text}
+                </div>
+              </div>
+              <div class="comment-footer">
+                
+                <div class="likes">
+                  <span class="likes-counter">${el['likes-counter']}</span>
+                  <button class="like-button ${el['likes-class'] } "></button>
+                </div>
+              </div>
+            </li>`).join('');  
+
+      likes();         
   }
 
-  comment.push({
-    name: nameInputElement.value,
-    time: myDate(),
-    comments: commentInputElement.value,
-    like: "0",
+  function checkValue() {
+    if( nameInputElement.value != '' && commentInputElement.value != '') buttonInputElement.disabled = false; 
+  }
+
+  buttonInputElement.addEventListener('click',() => {
+
+    if(nameInputElement.value == '' || commentInputElement.value == '') return;
+
+    nameInputElement.value = nameInputElement.value.replaceAll("&", "&amp;")
+                                                   .replaceAll("<", "&lt;")
+                                                   .replaceAll(">", "&gt;");
+        
+    commentInputElement.value = commentInputElement.value.replaceAll("&", "&amp;")
+                                                         .replaceAll("<", "&lt;")
+                                                         .replaceAll(">", "&gt;")
+                                                         .replaceAll('◄', '<div class ="quote">')
+                                                         .replaceAll('►', '</div><br>');
+
+                                                        
+    formElement.classList.add('add-form-load');  
+    loadElement.classList.add('loading-on');  
+    buttonInputElement.disabled = true;
+
+    fetch("https://webdev-hw-api.vercel.app/api/v1/egor-zuev/comments", {
+
+      method: "POST",
+
+      body: JSON.stringify({ 
+                text:commentInputElement.value,
+                name: nameInputElement.value
+                })
+    }).then((response) => {
+
+       return response.json()
+
+    }).then((responseData) => {
+          
+       reload();   
+
+    });
+     
+
+    nameInputElement.value = '';
+    commentInputElement.value = '';
+     
   });
 
-  renderComment();
+  function myDate (a) {
+      let date = new Date(a) || new Date();
+      let monthArray=['01','02','03','04','05','06','07','08','09','10','11','12'];
+      let myMinutes = String(date.getMinutes()).length < 2 ? '0' + date.getMinutes() : date.getMinutes();
+      let myHours = String(date.getHours()).length < 2 ? '0' + date.getHours() : date.getHours();
+      let myDay = String(date.getDate()).length < 2 ? '0' + date.getDate() : date.getDate();
+      let myMonth = monthArray[+date.getMonth()];
+      let myYear = String( date.getFullYear() ).slice(2);
+      let str= myDay + '.' + myMonth + '.' + myYear + ' ' + myHours + ':' + myMinutes;
+      return str;
+  }
 
-  nameInputElement.value = "";
-  commentInputElement.value = ""; 
-});
+  function likes() {
+ 
+    const listItems = listElement.querySelectorAll('.comment');
+
+      for(let key of listItems) {
+
+          const likeButton = key.querySelector('.like-button');
+          const likeCounter = key.querySelector('.likes-counter');
+         
+          likeButton.addEventListener('click',(event) => {
+           
+              event.stopPropagation();  
+
+              likeButton.classList.add('-loading-like');
+              
+              delay(2000).then(() => {
+
+                  likeButton.classList.toggle('-active-like');
+                  likeButton.classList.contains('-active-like') ? likeCounter.innerHTML++ : likeCounter.innerHTML--;
+                  likeButton.classList.remove('-loading-like');
+
+              })                   
+
+          })
+      }
+
+  }
+
+    function delay(interval = 300) {
+
+        return new Promise((resolve) => {
+
+          setTimeout(() => {
+            resolve();
+          }, interval);
+
+        });
+    }
