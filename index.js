@@ -8,10 +8,11 @@ let formElement = document.querySelector('.add-form');
 let loadElement = document.querySelector('.loading');
 let containerElement =document.querySelector('.container-loading');
 
+
+
 containerElement.textContent  = 'Пожалуйста подождите, загружаю комментарии';
 
 reload();
-
 
 checkValue();
 
@@ -20,7 +21,12 @@ checkValue();
     fetch("https://webdev-hw-api.vercel.app/api/v1/egor-zuev/comments", {
       method: "GET"
     }).then((response) => {
-          return response.json()
+
+        if (response.status == 500) {
+          throw new Error(500);
+        }
+        return response.json()
+
     }).then((responseData) => {            
 
           arrayOfComments = responseData.comments.map(el => {
@@ -29,8 +35,8 @@ checkValue();
                     name: el.author.name,
                     time: myDate(el.date),
                     text: el.text,
-                    likes1: el.likes,
-                    likes2: el.isLiked == true ? '-active-like' : '',
+                    'likes-counter': el.likes,
+                    'likes-class': el.isLiked == true ? '-active-like' : '',
                 };              
           });    
 
@@ -40,7 +46,11 @@ checkValue();
           loadElement.classList.remove('loading-on');
           containerElement.textContent ='';
           
-      });
+    }).catch((error) => {
+      
+        errorAlert(error);        
+
+    });
   };
 
   function renderComment() {
@@ -61,8 +71,8 @@ checkValue();
               <div class="comment-footer">
                 
                 <div class="likes">
-                  <span class="likes-counter">${el.likes1}</span>
-                  <button class="like-button ${el.likes2} "></button>
+                  <span class="likes-counter">${el['likes-counter']}</span>
+                  <button class="like-button ${el['likes-class'] } "></button>
                 </div>
               </div>
             </li>`).join('');  
@@ -74,49 +84,7 @@ checkValue();
     if( nameInputElement.value != '' && commentInputElement.value != '') buttonInputElement.disabled = false; 
   }
 
-  buttonInputElement.addEventListener('click',() => {
-
-    if(nameInputElement.value == '' || commentInputElement.value == '') return;
-
-    nameInputElement.value = nameInputElement.value.replaceAll("&", "&amp;")
-                                                   .replaceAll("<", "&lt;")
-                                                   .replaceAll(">", "&gt;");
-        
-    commentInputElement.value = commentInputElement.value.replaceAll("&", "&amp;")
-                                                         .replaceAll("<", "&lt;")
-                                                         .replaceAll(">", "&gt;")
-                                                         .replaceAll('◄', '<div class ="quote">')
-                                                         .replaceAll('►', '</div><br>');
-
-                                                        
-    formElement.classList.add('add-form-load');  
-    loadElement.classList.add('loading-on');  
-    buttonInputElement.disabled = true;
-
-    fetch("https://webdev-hw-api.vercel.app/api/v1/egor-zuev/comments", {
-
-      method: "POST",
-
-      body: JSON.stringify({ 
-                text:commentInputElement.value,
-                name: nameInputElement.value,
-                likes1: el.likes,
-                })
-    }).then((response) => {
-
-       return response.json()
-
-    }).then((responseData) => {
-          
-       reload();   
-
-    });
-     
-
-    nameInputElement.value = '';
-    commentInputElement.value = '';
-     
-  });
+  buttonInputElement.addEventListener('click',postAndGetComments); 
 
   function myDate (a) {
       let date = new Date(a) || new Date();
@@ -134,27 +102,27 @@ checkValue();
  
     const listItems = listElement.querySelectorAll('.comment');
 
-      for(let key of listItems) {
+    for(let key of listItems) {
 
-          const likeButton = key.querySelector('.like-button');
-          const likeCounter = key.querySelector('.likes-counter');
-         
-          likeButton.addEventListener('click',(event) => {
-           
-              event.stopPropagation();  
+        const likeButton = key.querySelector('.like-button');
+        const likeCounter = key.querySelector('.likes-counter');
+        
+        likeButton.addEventListener('click',(event) => {
+          
+            event.stopPropagation();  
 
-              likeButton.classList.add('-loading-like');
-              
-              delay(2000).then(() => {
+            likeButton.classList.add('-loading-like');
+            
+            delay(2000).then(() => {
 
-                  likeButton.classList.toggle('-active-like');
-                  likeButton.classList.contains('-active-like') ? likeCounter.innerHTML++ : likeCounter.innerHTML--;
-                  likeButton.classList.remove('-loading-like');
+                likeButton.classList.toggle('-active-like');
+                likeButton.classList.contains('-active-like') ? likeCounter.innerHTML++ : likeCounter.innerHTML--;
+                likeButton.classList.remove('-loading-like');
 
-              })                   
+            })                   
 
-          })
-      }
+        })
+    }
 
   }
 
@@ -167,4 +135,77 @@ checkValue();
           }, interval);
 
         });
+    }
+
+    function errorAlert(error) {
+    
+        switch(error.message){
+          case '400':              
+              alert('Имя и комментарий должны быть не короче 3 символов');
+              formElement.classList.remove('add-form-load');
+              loadElement.classList.remove('loading-on');
+              buttonInputElement.disabled = false;
+              break;
+          case 'Failed to fetch': 
+          case '500': 
+              console.log('Сервер сломался, попробуй позже');
+              postAndGetComments();                              
+              break;
+          default :
+              alert('Не знаю что за ошибка');
+              break;
+        }
+    }
+
+    function postAndGetComments() {
+
+          if(nameInputElement.value == '' || commentInputElement.value == '') return;
+
+          nameInputElement.value = nameInputElement.value.replaceAll("&", "&amp;")
+                                                        .replaceAll("<", "&lt;")
+                                                        .replaceAll(">", "&gt;");
+              
+          commentInputElement.value = commentInputElement.value.replaceAll("&", "&amp;")
+                                                              .replaceAll("<", "&lt;")
+                                                              .replaceAll(">", "&gt;")
+                                                              .replaceAll('◄', '<div class ="quote">')
+                                                              .replaceAll('►', '</div><br>');
+
+                                                              
+          formElement.classList.add('add-form-load');  
+          loadElement.classList.add('loading-on');  
+          buttonInputElement.disabled = true;
+
+          fetch("https://webdev-hw-api.vercel.app/api/v1/egor-zuev/comments", {
+
+            method: "POST",
+
+            body: JSON.stringify({ 
+                      text:commentInputElement.value,
+                      name: nameInputElement.value,
+                      forceError: true
+                      })
+          }).then((response) => {
+                  
+              if (response.status == 400) {
+                throw new Error(400);
+              }
+              if (response.status == 500) {
+                throw new Error(500);
+              }
+
+            return response.json()
+
+          }).then((responseData) => {
+                
+            reload();  
+            nameInputElement.value = '';
+            commentInputElement.value = ''; 
+
+          }).catch((error) => {
+                
+              errorAlert(error);       
+
+          });
+
     }
