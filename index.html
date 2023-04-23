@@ -9,35 +9,43 @@
     <div class="container">
       <p class = 'container-loading'></p>
       <ul class="comments">
+        <!-- Рендерится в JS  -->
       </ul>
       <div class="add-form">
         <input
           type="text"
           class="add-form-name"
           placeholder="Введите ваше имя"
-          oninput="checkValue()"
+          
           
           
         />
         <textarea
           type="textarea"
           class="add-form-text"
-          placeholder="Введите ваш коментарий"
+          placeholder="Введите  ваш коментарий"
           rows="4"          
-          oninput="checkValue()"
+          
           
         ></textarea>
         <div class="add-form-row">
           <button class="add-form-button">Написать</button>
-          
+          <button class="exit-button">Выход</button>
         </div>
        
         
       </div>
+
+      <div class ="login-text"> 
+        <br>
+        Чтобы добавить комментарий, <a  class='login-link' href="login.html"> авторизуйтесь </a>          
+      </div>
+      
       <div class ="loading"> 
-        Комментарий добавляется...
+        Комментарий добавляется...        
       </div>
     </div>
+    <script type = "module" src="./main.js" ></script>
   </body>
-  <script src="index.js"> </script>
+
 </html>
